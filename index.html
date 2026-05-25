@@ -24,20 +24,60 @@ platforms = [{ x: 0, y: h - 20, w: w, h: 20 }, { x: 50, y: h - 150, w: 200, h: 2
 }
 window.addEventListener('resize', resize);
 resize();
-window.addEventListener('touchstart', () => { if(player.grounded) { player.dy = player.jump; player.grounded = false; } });
-function update() {
-if(won) return;
-player.dy += player.gravity;
-player.y += player.dy;
-if(player.y < 50) won = true;
-platforms.forEach(p => {
-if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 20 && player.dy > 0) {
-player.dy = 0;
-player.y = p.y - player.h;
-player.grounded = true;
-}
+// إضافة متغير للسرعة الأفقية
+player.vx = 0;
+
+// تعديل حدث اللمس ليكون ذكياً (يمين ويسار)
+window.addEventListener('touchstart', (e) => {
+    let touchX = e.touches[0].clientX;
+    
+    // إذا لمس جهة اليسار يتحرك يسار
+    if (touchX < w / 3) {
+        player.vx = -5;
+    } 
+    // إذا لمس جهة اليمين يتحرك يمين
+    else if (touchX > (w / 3) * 2) {
+        player.vx = 5;
+    } 
+    // إذا لمس الوسط يقفز
+    else {
+        if(player.grounded) {
+            player.dy = player.jump;
+            player.grounded = false;
+        }
+    }
 });
+
+// إيقاف الحركة عند رفع الإصبع
+window.addEventListener('touchend', () => {
+    player.vx = 0;
+});
+
+// تحديث دالة الـ update لتشمل الحركة الأفقية
+function update() {
+    if(won) return;
+    
+    player.x += player.vx; // إضافة الحركة الأفقية
+    player.dy += player.gravity;
+    player.y += player.dy;
+    
+    // منع الخروج من حدود الشاشة
+    if (player.x < 0) player.x = 0;
+    if (player.x > w - player.w) player.x = w - player.w;
+    
+    if(player.y < 50) won = true;
+    
+    platforms.forEach(p => {
+        if(player.x < p.x + p.w && player.x + player.w > p.x && 
+           player.y + player.h > p.y && player.y + player.h < p.y + p.h + 20 && 
+           player.dy > 0) {
+            player.dy = 0;
+            player.y = p.y - player.h;
+            player.grounded = true;
+        }
+    });
 }
+
 function draw() {
 ctx.clearRect(0,0,w,h);
 ctx.fillStyle = '#0f0';
